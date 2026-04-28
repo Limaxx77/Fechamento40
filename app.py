@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import psycopg2
 import psycopg2.extras
@@ -85,8 +85,15 @@ def criar_admin_padrao():
     conn.close()
 
 
+# 🔥 AGORA O SITE ABRE AQUI
 @app.route("/")
 def home():
+    return send_file("index.html")
+
+
+# (opcional - para testar API)
+@app.route("/api")
+def api_status():
     return jsonify({
         "status": "online",
         "mensagem": "API 40 Graus funcionando"
@@ -100,94 +107,53 @@ def login():
     usuario = data.get("usuario")
     senha = data.get("senha")
 
-    if not usuario or not senha:
-        return jsonify({"status": "erro", "mensagem": "Usuário e senha são obrigatórios"}), 400
-
     conn = get_conn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    cur.execute("""
-        SELECT id, nome, usuario, senha_hash, role, ativo
-        FROM usuarios
-        WHERE usuario = %s
-    """, (usuario,))
-
+    cur.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
     user = cur.fetchone()
 
     cur.close()
     conn.close()
 
-    if not user:
-        return jsonify({"status": "erro", "mensagem": "Usuário não encontrado"}), 401
-
-    if not user["ativo"]:
-        return jsonify({"status": "erro", "mensagem": "Usuário inativo"}), 403
-
-    if check_password_hash(user["senha_hash"], senha):
+    if user and check_password_hash(user["senha_hash"], senha):
         return jsonify({
             "status": "ok",
-            "user_id": user["id"],
-            "nome": user["nome"],
-            "usuario": user["usuario"],
-            "role": user["role"]
+            "user_id": user["id"]
         })
 
-    return jsonify({"status": "erro", "mensagem": "Senha incorreta"}), 401
+    return jsonify({"status": "erro"}), 401
 
 
 @app.route("/salvar", methods=["POST"])
-def salvar_fechamento():
+def salvar():
     data = request.get_json()
 
     conn = get_conn()
     cur = conn.cursor()
 
     cur.execute("""
-        INSERT INTO fechamentos (
-            usuario_id, mes, ano,
-            v_cred, v_pix, v_ifood, v_din,
-            d_ifood, d_stone,
-            dp_comp, dp_bol, dp_sal, dp_pend,
-            atualizado_em
-        )
-        VALUES (
-            %s, %s, %s,
-            %s, %s, %s, %s,
-            %s, %s,
-            %s, %s, %s, %s,
-            CURRENT_TIMESTAMP
-        )
-        ON CONFLICT (mes, ano)
-        DO UPDATE SET
-            usuario_id = EXCLUDED.usuario_id,
-            v_cred = EXCLUDED.v_cred,
-            v_pix = EXCLUDED.v_pix,
-            v_ifood = EXCLUDED.v_ifood,
-            v_din = EXCLUDED.v_din,
-            d_ifood = EXCLUDED.d_ifood,
-            d_stone = EXCLUDED.d_stone,
-            dp_comp = EXCLUDED.dp_comp,
-            dp_bol = EXCLUDED.dp_bol,
-            dp_sal = EXCLUDED.dp_sal,
-            dp_pend = EXCLUDED.dp_pend,
-            atualizado_em = CURRENT_TIMESTAMP
+    INSERT INTO fechamentos 
+    (usuario_id, mes, ano, v_cred, v_pix, v_ifood, v_din,
+     d_ifood, d_stone, dp_comp, dp_bol, dp_sal, dp_pend)
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    ON CONFLICT (mes, ano)
+    DO UPDATE SET
+        v_cred=EXCLUDED.v_cred,
+        v_pix=EXCLUDED.v_pix,
+        v_ifood=EXCLUDED.v_ifood,
+        v_din=EXCLUDED.v_din,
+        d_ifood=EXCLUDED.d_ifood,
+        d_stone=EXCLUDED.d_stone,
+        dp_comp=EXCLUDED.dp_comp,
+        dp_bol=EXCLUDED.dp_bol,
+        dp_sal=EXCLUDED.dp_sal,
+        dp_pend=EXCLUDED.dp_pend
     """, (
-        data.get("usuario_id"),
-        data.get("mes"),
-        data.get("ano"),
-
-        data.get("v_cred", 0),
-        data.get("v_pix", 0),
-        data.get("v_ifood", 0),
-        data.get("v_din", 0),
-
-        data.get("d_ifood", 0),
-        data.get("d_stone", 0),
-
-        data.get("dp_comp", 0),
-        data.get("dp_bol", 0),
-        data.get("dp_sal", 0),
-        data.get("dp_pend", 0)
+        data['usuario_id'], data['mes'], data['ano'],
+        data['v_cred'], data['v_pix'], data['v_ifood'], data['v_din'],
+        data['d_ifood'], data['d_stone'],
+        data['dp_comp'], data['dp_bol'], data['dp_sal'], data['dp_pend']
     ))
 
     conn.commit()
@@ -198,16 +164,11 @@ def salvar_fechamento():
 
 
 @app.route("/fechamentos", methods=["GET"])
-def listar_fechamentos():
+def listar():
     conn = get_conn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    cur.execute("""
-        SELECT *
-        FROM fechamentos
-        ORDER BY ano DESC, mes DESC
-    """)
-
+    cur.execute("SELECT * FROM fechamentos ORDER BY ano DESC, mes DESC")
     dados = cur.fetchall()
 
     cur.close()
@@ -216,74 +177,7 @@ def listar_fechamentos():
     return jsonify(dados)
 
 
-@app.route("/fechamento/<int:ano>/<int:mes>", methods=["GET"])
-def buscar_fechamento(ano, mes):
-    conn = get_conn()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-    cur.execute("""
-        SELECT *
-        FROM fechamentos
-        WHERE ano = %s AND mes = %s
-    """, (ano, mes))
-
-    dado = cur.fetchone()
-
-    cur.close()
-    conn.close()
-
-    if dado:
-        return jsonify(dado)
-
-    return jsonify({})
-
-
-@app.route("/deletar/<int:id>", methods=["DELETE"])
-def deletar_fechamento(id):
-    conn = get_conn()
-    cur = conn.cursor()
-
-    cur.execute("DELETE FROM fechamentos WHERE id = %s", (id,))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify({"status": "deletado"})
-
-
-@app.route("/criar_usuario", methods=["POST"])
-def criar_usuario():
-    data = request.get_json()
-
-    nome = data.get("nome")
-    usuario = data.get("usuario")
-    senha = data.get("senha")
-
-    if not nome or not usuario or not senha:
-        return jsonify({"status": "erro", "mensagem": "Preencha todos os campos"}), 400
-
-    senha_hash = generate_password_hash(senha)
-
-    try:
-        conn = get_conn()
-        cur = conn.cursor()
-
-        cur.execute("""
-            INSERT INTO usuarios (nome, usuario, senha_hash, role)
-            VALUES (%s, %s, %s, %s)
-        """, (nome, usuario, senha_hash, "usuario"))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return jsonify({"status": "criado"})
-
-    except psycopg2.errors.UniqueViolation:
-        return jsonify({"status": "erro", "mensagem": "Usuário já existe"}), 409
-
-
+# 🔥 inicia banco automaticamente
 if DATABASE_URL:
     criar_tabelas()
     criar_admin_padrao()
