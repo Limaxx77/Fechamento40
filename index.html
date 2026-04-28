@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>40 Graus Business Month</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --primary:#B85A30;--primary-light:#FAECE7;--primary-dark:#4A1B0C;
+    --accent:#0F6E56;--accent-light:#E1F5EE;
+    --bg:#faf9f7;--surface:#fff;--border:#e8e4df;
+    --text:#2C2C2A;--muted:#888780;
+    --danger:#E24B4A;--success:#3B6D11;
+  }
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  /* LOGIN */
+  #loginScreen{
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:2rem;
+  }
+  .login-card{
+    background:var(--surface);border:0.5px solid var(--border);
+    border-radius:16px;padding:2.5rem 2rem;width:100%;max-width:340px;
+    text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.07);
+  }
+  .brand-name{font-family:'DM Serif Display',serif;font-size:26px;color:var(--primary);margin-bottom:4px}
+  .brand-sub{font-size:12px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2rem}
+  .login-card input{
+    width:100%;padding:10px 14px;border:0.5px solid var(--border);
+    border-radius:8px;font-size:14px;margin-bottom:12px;font-family:'DM Sans',sans-serif;
+    background:var(--bg);color:var(--text);
+  }
+  .login-card input:focus{outline:none;border-color:var(--primary)}
+  .btn-primary{
+    width:100%;padding:11px;background:var(--primary);color:#fff;
+    border:none;border-radius:8px;font-size:14px;font-weight:500;
+    cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity 0.15s
+  }
+  .btn-primary:hover{opacity:0.88}
+  .login-err{font-size:12px;color:var(--danger);margin-top:8px;min-height:18px}
+
+  /* APP */
+  #appScreen{display:none}
+  .topbar{
+    background:var(--surface);border-bottom:0.5px solid var(--border);
+    padding:14px 1.5rem;display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:10;
+  }
+  .top-brand{font-family:'DM Serif Display',serif;font-size:20px;color:var(--primary)}
+  .top-brand span{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);display:block;letter-spacing:0.07em;text-transform:uppercase}
+  .top-right{display:flex;align-items:center;gap:12px}
+  .month-selector{
+    border:0.5px solid var(--border);border-radius:8px;padding:6px 10px;
+    font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg);
+    color:var(--text);cursor:pointer;
+  }
+  .btn-logout{
+    font-size:12px;color:var(--muted);background:none;border:0.5px solid var(--border);
+    border-radius:6px;padding:5px 10px;cursor:pointer;font-family:'DM Sans',sans-serif;
+  }
+  .btn-logout:hover{color:var(--danger);border-color:var(--danger)}
+
+  .content{padding:1.25rem 1.5rem;max-width:900px;margin:0 auto}
+
+  /* SUMMARY CARDS */
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.5rem}
+  .scard{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1rem}
+  .scard-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
+  .scard-value{font-size:20px;font-weight:500;font-family:'DM Serif Display',serif}
+  .scard-value.pos{color:var(--success)}
+  .scard-value.neg{color:var(--danger)}
+  .scard-value.neutral{color:var(--primary)}
+
+  /* SECTIONS */
+  .section{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;margin-bottom:1rem;overflow:hidden}
+  .section-head{
+    padding:12px 1.25rem;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:0.5px solid var(--border);
+  }
+  .section-title{font-size:13px;font-weight:500;letter-spacing:0.04em;display:flex;align-items:center;gap:8px}
+  .sec-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .section-total{font-size:14px;font-weight:500}
+  .section-body{padding:1rem 1.25rem}
+
+  .row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .row label{font-size:12px;color:var(--muted);width:200px;flex-shrink:0}
+  .row input{
+    flex:1;padding:7px 10px;border:0.5px solid var(--border);border-radius:7px;
+    font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg);color:var(--text);
+    min-width:0;
+  }
+  .row input:focus{outline:none;border-color:var(--primary)}
+  .row .fmt{font-size:13px;font-weight:500;color:var(--text);min-width:110px;text-align:right}
+
+  .save-btn{
+    width:100%;padding:12px;background:var(--primary);color:#fff;border:none;
+    border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;
+    font-family:'DM Sans',sans-serif;margin-top:1rem;transition:opacity 0.15s
+  }
+  .save-btn:hover{opacity:0.88}
+  .save-msg{text-align:center;font-size:12px;color:var(--success);margin-top:6px;min-height:18px}
+
+  /* HISTORY */
+  .hist-list{margin-top:0.25rem}
+  .hist-item{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:9px 0;border-bottom:0.5px solid var(--border);font-size:13px;gap:8px
+  }
+  .hist-item:last-child{border-bottom:none}
+  .hist-month{font-weight:500;min-width:110px}
+  .hist-saldo{font-weight:500}
+  .hist-saldo.pos{color:var(--success)}
+  .hist-saldo.neg{color:var(--danger)}
+  .hist-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px}
+  .hist-del:hover{color:var(--danger)}
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:1.5rem}
+
+  @media(max-width:600px){
+    .row{flex-wrap:wrap}
+    .row label{width:100%}
+    .row .fmt{min-width:auto}
+    .summary-grid{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="brand-name">40 Graus</div>
+    <div class="brand-sub">Business Month</div>
+    <input type="text" id="loginUser" placeholder="Usuário" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <input type="password" id="loginPass" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn-primary" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <div class="topbar">
+    <div class="top-brand">
+      40 Graus
+      <span>Business Month</span>
+    </div>
+    <div class="top-right">
+      <select class="month-selector" id="selMes">
+        <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+        <option value="3">Março</option><option value="4">Abril</option>
+        <option value="5">Maio</option><option value="6">Junho</option>
+        <option value="7">Julho</option><option value="8">Agosto</option>
+        <option value="9">Setembro</option><option value="10">Outubro</option>
+        <option value="11">Novembro</option><option value="12">Dezembro</option>
+      </select>
+      <select class="month-selector" id="selAno"></select>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div style="margin-bottom:1rem">
+      <div style="font-size:13px;color:var(--muted)">Selecione o mês e preencha os valores para o fechamento.</div>
+    </div>
+
+    <!-- Resumo -->
+    <div class="summary-grid">
+      <div class="scard"><div class="scard-label">Total Vendas</div><div class="scard-value neutral" id="s-vendas">R$ 0,00</div></div>
+      <div class="scard"><div class="scard-label">Venda Líquida</div><div class="scard-value neutral" id="s-liquido">R$ 0,00</div></div>
+      <div class="scard"><div class="scard-label">Total Despesas</div><div class="scard-value neg" id="s-despesas">R$ 0,00</div></div>
+      <div class="scard"><div class="scard-label">Saldo do Mês</div><div class="scard-value pos" id="s-saldo">R$ 0,00</div></div>
+      <div class="scard"><div class="scard-label">% Lucro Bruto</div><div class="scard-value neutral" id="s-lbruto">0,00%</div></div>
+      <div class="scard"><div class="scard-label">% Lucro Líquido</div><div class="scard-value neutral" id="s-lliq">0,00%</div></div>
+    </div>
+
+    <!-- VENDAS -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title"><span class="sec-dot" style="background:#B85A30"></span>Valores de Entrada / Vendas</div>
+        <div class="section-total" id="t-vendas" style="color:var(--primary)">R$ 0,00</div>
+      </div>
+      <div class="section-body">
+        <div class="row"><label>Crédito / Débito / Pix QR</label><input type="number" id="v-cred" placeholder="0.00" min="0" step="0.01" oninput="calc()"/><div class="fmt" id="f-cred">R$ 0,00</div></div>
+        <div class="row"><label>Pix</label><input type="number" id="v-pix" placeholder="0.00" min="0" step="0.01" oninput="calc()"/><div class="fmt" id="f-pix">R$ 0,00</div></div>
+        <div class="row"><label>iFood</label><input type="number" id="v-ifood" placeholder="0.00" min="0" step="0.01" oninput="calc()"/><div class="fmt" id="f-ifood">R$ 0,00</div></div>
+        <div class="row"><label>Dinheiro</label><input type="number" id="v-din" placeholder="0.00" min="0" step="0.01" oninput="calc()"/><div class="fmt" id="f-din">R$ 0,00</div></div>
+      </div>
+    </div>
+
+    <!-- DESCONTOS -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title"><span class="sec-dot" style="background:#E24B4A"></span>Descontos de Sistemas</div>
+        <div class="section-total" id="t-desc" style="color:var(--danger)">R$ 0,00</div>
+      </div>
+      <div class="section-body">
+        <div class="row"><label>iFood</label><input type="number" id="d-ifood" placeholder="0.00" min="0" step="0.01" oninput="calc()"/><div class="fmt" id="fd-ifood">R$ 0,00</div></div>
+        <div class="row"><label>Stone / Getnet</label><input type="number" id="d-stone" placeholder="0.00" min="0" step="0.01" oninput="calc()"/><div class="fmt" id="fd-stone">R$ 0,00</div></div>
+      </div>
+    </div>
+
+    <!-- DESPESAS -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title"><span class="sec-dot" style="background:#A32D2D"></span>Valores de Despesa</div>
+        <div class="section-total" id="t-desp" style="color:var(--danger)">R$ 0,00</div>
+      </div>
+      <div class="section-body">
+        <div class="row"><label>Compras</label><input type="number" id="dp-comp" placeholder="0.00" min="0" step="0.01" oninput="calc()"/><div class="fmt" id="fp-comp">R$ 0,00</div></div>
+        <div class="row"><label>Boletos / Contas Pagas</label><input type="number" id="dp-bol" placeholder="0.00" min="0" step="0.01" oninput="calc()"/><div class="fmt" id="fp-bol">R$ 0,00</div></div>
+        <div class="row"><label>Salários</label><input type="number" id="dp-sal" placeholder="0.00" min="0" step="0.01" oninput="calc()"/><div class="fmt" id="fp-sal">R$ 0,00</div></div>
+        <div class="row"><label>Conta Pendente / Assinadas</label><input type="number" id="dp-pend" placeholder="0.00" min="0" step="0.01" oninput="calc()"/><div class="fmt" id="fp-pend">R$ 0,00</div></div>
+      </div>
+    </div>
+
+    <button class="save-btn" onclick="saveMonth()">Salvar Fechamento do Mês</button>
+    <div class="save-msg" id="saveMsg"></div>
+
+    <!-- HISTÓRICO -->
+    <div class="section" style="margin-top:1.5rem">
+      <div class="section-head">
+        <div class="section-title"><span class="sec-dot" style="background:#0F6E56"></span>Histórico de Fechamentos</div>
+      </div>
+      <div class="section-body">
+        <div class="hist-list" id="histList"><div class="empty">Nenhum fechamento salvo ainda.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = "http://127.0.0.1:5000";
+
+const MONTHS = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+];
+
+let usuarioLogado = null;
+
+function fmt(v) {
+  v = Number(v) || 0;
+  return "R$ " + v.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+function pct(v) {
+  v = Number(v) || 0;
+  return v.toFixed(2).replace(".", ",") + "%";
+}
+
+function num(id) {
+  return parseFloat(document.getElementById(id).value) || 0;
+}
+
+function set(id, val) {
+  document.getElementById(id).textContent = val;
+}
+
+async function doLogin() {
+  const usuario = document.getElementById("loginUser").value.trim();
+  const senha = document.getElementById("loginPass").value.trim();
+
+  if (!usuario || !senha) {
+    document.getElementById("loginErr").textContent = "Preencha usuário e senha.";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ usuario, senha })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.status === "ok") {
+      usuarioLogado = data.user_id;
+
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("appScreen").style.display = "block";
+      document.getElementById("loginErr").textContent = "";
+
+      initApp();
+    } else {
+      document.getElementById("loginErr").textContent = "Usuário ou senha incorretos.";
+    }
+  } catch (error) {
+    document.getElementById("loginErr").textContent = "Erro ao conectar com o servidor.";
+    console.error(error);
+  }
+}
+
+function doLogout() {
+  usuarioLogado = null;
+
+  document.getElementById("appScreen").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+
+  document.getElementById("loginUser").value = "";
+  document.getElementById("loginPass").value = "";
+  document.getElementById("loginErr").textContent = "";
+}
+
+function initApp() {
+  const ano = document.getElementById("selAno");
+
+  if (ano.options.length === 0) {
+    const y = new Date().getFullYear();
+
+    for (let i = y - 3; i <= y + 2; i++) {
+      const option = document.createElement("option");
+      option.value = i;
+      option.textContent = i;
+
+      if (i === y) option.selected = true;
+
+      ano.appendChild(option);
+    }
+  }
+
+  document.getElementById("selMes").value = new Date().getMonth() + 1;
+
+  document.getElementById("selMes").onchange = loadMonth;
+  document.getElementById("selAno").onchange = loadMonth;
+
+  loadMonth();
+  renderHist();
+}
+
+function getMesAno() {
+  return {
+    mes: Number(document.getElementById("selMes").value),
+    ano: Number(document.getElementById("selAno").value)
+  };
+}
+
+function calc() {
+  const cred = num("v-cred");
+  const pix = num("v-pix");
+  const ifood = num("v-ifood");
+  const din = num("v-din");
+
+  const dIfood = num("d-ifood");
+  const dStone = num("d-stone");
+
+  const comp = num("dp-comp");
+  const bol = num("dp-bol");
+  const sal = num("dp-sal");
+  const pend = num("dp-pend");
+
+  const totalVendas = cred + pix + ifood + din;
+  const totalDesc = dIfood + dStone;
+  const vendaLiq = totalVendas - totalDesc;
+  const totalDesp = comp + bol + sal + pend;
+  const saldo = vendaLiq - totalDesp;
+
+  const lucroBruto = totalVendas > 0 ? (saldo / totalVendas) * 100 : 0;
+  const lucroLiquido = vendaLiq > 0 ? (saldo / vendaLiq) * 100 : 0;
+
+  set("f-cred", fmt(cred));
+  set("f-pix", fmt(pix));
+  set("f-ifood", fmt(ifood));
+  set("f-din", fmt(din));
+
+  set("fd-ifood", fmt(dIfood));
+  set("fd-stone", fmt(dStone));
+
+  set("fp-comp", fmt(comp));
+  set("fp-bol", fmt(bol));
+  set("fp-sal", fmt(sal));
+  set("fp-pend", fmt(pend));
+
+  set("t-vendas", fmt(totalVendas));
+  set("t-desc", fmt(totalDesc));
+  set("t-desp", fmt(totalDesp));
+
+  set("s-vendas", fmt(totalVendas));
+  set("s-liquido", fmt(vendaLiq));
+  set("s-despesas", fmt(totalDesp));
+  set("s-saldo", fmt(saldo));
+  set("s-lbruto", pct(lucroBruto));
+  set("s-lliq", pct(lucroLiquido));
+
+  const saldoCard = document.getElementById("s-saldo");
+  saldoCard.className = "scard-value " + (saldo >= 0 ? "pos" : "neg");
+}
+
+async function saveMonth() {
+  const { mes, ano } = getMesAno();
+
+  const dados = {
+    usuario_id: usuarioLogado,
+    mes,
+    ano,
+
+    v_cred: num("v-cred"),
+    v_pix: num("v-pix"),
+    v_ifood: num("v-ifood"),
+    v_din: num("v-din"),
+
+    d_ifood: num("d-ifood"),
+    d_stone: num("d-stone"),
+
+    dp_comp: num("dp-comp"),
+    dp_bol: num("dp-bol"),
+    dp_sal: num("dp-sal"),
+    dp_pend: num("dp-pend")
+  };
+
+  try {
+    const res = await fetch(`${API_URL}/salvar`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(dados)
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.status === "salvo") {
+      document.getElementById("saveMsg").textContent = "Fechamento salvo no banco com sucesso!";
+      renderHist();
+
+      setTimeout(() => {
+        document.getElementById("saveMsg").textContent = "";
+      }, 3000);
+    } else {
+      document.getElementById("saveMsg").textContent = "Erro ao salvar fechamento.";
+    }
+  } catch (error) {
+    document.getElementById("saveMsg").textContent = "Erro ao conectar com o servidor.";
+    console.error(error);
+  }
+}
+
+async function loadMonth() {
+  const { mes, ano } = getMesAno();
+
+  const fields = [
+    "v-cred", "v-pix", "v-ifood", "v-din",
+    "d-ifood", "d-stone",
+    "dp-comp", "dp-bol", "dp-sal", "dp-pend"
+  ];
+
+  fields.forEach(id => {
+    document.getElementById(id).value = "";
+  });
+
+  try {
+    const res = await fetch(`${API_URL}/fechamentos`);
+    const dados = await res.json();
+
+    const item = dados.find(f => Number(f.mes) === mes && Number(f.ano) === ano);
+
+    if (item) {
+      document.getElementById("v-cred").value = item.v_cred || "";
+      document.getElementById("v-pix").value = item.v_pix || "";
+      document.getElementById("v-ifood").value = item.v_ifood || "";
+      document.getElementById("v-din").value = item.v_din || "";
+
+      document.getElementById("d-ifood").value = item.d_ifood || "";
+      document.getElementById("d-stone").value = item.d_stone || "";
+
+      document.getElementById("dp-comp").value = item.dp_comp || "";
+      document.getElementById("dp-bol").value = item.dp_bol || "";
+      document.getElementById("dp-sal").value = item.dp_sal || "";
+      document.getElementById("dp-pend").value = item.dp_pend || "";
+    }
+
+    calc();
+    document.getElementById("saveMsg").textContent = "";
+  } catch (error) {
+    console.error(error);
+    calc();
+  }
+}
+
+async function renderHist() {
+  const el = document.getElementById("histList");
+
+  try {
+    const res = await fetch(`${API_URL}/fechamentos`);
+    const dados = await res.json();
+
+    if (!dados.length) {
+      el.innerHTML = '<div class="empty">Nenhum fechamento salvo ainda.</div>';
+      return;
+    }
+
+    el.innerHTML = "";
+
+    dados.forEach(item => {
+      const totalVendas =
+        Number(item.v_cred || 0) +
+        Number(item.v_pix || 0) +
+        Number(item.v_ifood || 0) +
+        Number(item.v_din || 0);
+
+      const totalDesc =
+        Number(item.d_ifood || 0) +
+        Number(item.d_stone || 0);
+
+      const totalDesp =
+        Number(item.dp_comp || 0) +
+        Number(item.dp_bol || 0) +
+        Number(item.dp_sal || 0) +
+        Number(item.dp_pend || 0);
+
+      const saldo = totalVendas - totalDesc - totalDesp;
+
+      const label = `${MONTHS[Number(item.mes) - 1]} ${item.ano}`;
+
+      const row = document.createElement("div");
+      row.className = "hist-item";
+
+      row.innerHTML = `
+        <span class="hist-month">${label}</span>
+        <span style="font-size:12px;color:var(--muted)">Vendas: ${fmt(totalVendas)}</span>
+        <span class="hist-saldo ${saldo >= 0 ? "pos" : "neg"}">${fmt(saldo)}</span>
+      `;
+
+      el.appendChild(row);
+    });
+  } catch (error) {
+    console.error(error);
+    el.innerHTML = '<div class="empty">Erro ao carregar histórico.</div>';
+  }
+}
+</script>
+</body>
+</html>
