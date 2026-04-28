@@ -232,8 +232,6 @@
 </div>
 
 <script>
-const API_URL = "http://127.0.0.1:5000";
-
 const MONTHS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
@@ -260,7 +258,7 @@ function set(id, val) {
 }
 
 async function doLogin() {
-  const usuario = document.getElementById("loginUser").value.trim();
+  const usuario = document.getElementById("loginUser").value.trim().toLowerCase();
   const senha = document.getElementById("loginPass").value.trim();
 
   if (!usuario || !senha) {
@@ -269,7 +267,7 @@ async function doLogin() {
   }
 
   try {
-    const res = await fetch(`${API_URL}/login`, {
+    const res = await fetch("/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -288,11 +286,12 @@ async function doLogin() {
 
       initApp();
     } else {
-      document.getElementById("loginErr").textContent = "Usuário ou senha incorretos.";
+      document.getElementById("loginErr").textContent = data.mensagem || "Usuário ou senha incorretos.";
     }
+
   } catch (error) {
+    console.error("Erro no login:", error);
     document.getElementById("loginErr").textContent = "Erro ao conectar com o servidor.";
-    console.error(error);
   }
 }
 
@@ -414,7 +413,7 @@ async function saveMonth() {
   };
 
   try {
-    const res = await fetch(`${API_URL}/salvar`, {
+    const res = await fetch("/salvar", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -425,7 +424,7 @@ async function saveMonth() {
     const data = await res.json();
 
     if (res.ok && data.status === "salvo") {
-      document.getElementById("saveMsg").textContent = "Fechamento salvo no banco com sucesso!";
+      document.getElementById("saveMsg").textContent = "Fechamento salvo com sucesso!";
       renderHist();
 
       setTimeout(() => {
@@ -434,9 +433,10 @@ async function saveMonth() {
     } else {
       document.getElementById("saveMsg").textContent = "Erro ao salvar fechamento.";
     }
+
   } catch (error) {
+    console.error("Erro ao salvar:", error);
     document.getElementById("saveMsg").textContent = "Erro ao conectar com o servidor.";
-    console.error(error);
   }
 }
 
@@ -454,7 +454,7 @@ async function loadMonth() {
   });
 
   try {
-    const res = await fetch(`${API_URL}/fechamentos`);
+    const res = await fetch("/fechamentos");
     const dados = await res.json();
 
     const item = dados.find(f => Number(f.mes) === mes && Number(f.ano) === ano);
@@ -476,8 +476,9 @@ async function loadMonth() {
 
     calc();
     document.getElementById("saveMsg").textContent = "";
+
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao carregar mês:", error);
     calc();
   }
 }
@@ -486,7 +487,7 @@ async function renderHist() {
   const el = document.getElementById("histList");
 
   try {
-    const res = await fetch(`${API_URL}/fechamentos`);
+    const res = await fetch("/fechamentos");
     const dados = await res.json();
 
     if (!dados.length) {
@@ -528,11 +529,13 @@ async function renderHist() {
 
       el.appendChild(row);
     });
+
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao carregar histórico:", error);
     el.innerHTML = '<div class="empty">Erro ao carregar histórico.</div>';
   }
 }
 </script>
 </body>
 </html>
+
